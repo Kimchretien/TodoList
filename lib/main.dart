@@ -43,6 +43,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
 
   final CollectionReference _todos=FirebaseFirestore.instance.collection("todos");
+  final TextEditingController _controller =TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +59,33 @@ class _MyHomePageState extends State<MyHomePage> {
       body: SafeArea(
         child: Column(
           children: [
+            Padding(
+              padding: EdgeInsets.all(8.0),
+              child: TextField(
+                controller: _controller,
+                decoration: InputDecoration(
+                  hintText: "Add new Task",
+                  border: OutlineInputBorder(
+                  ),
+                  suffixIcon: IconButton(
+                    onPressed: ()async{
+                       if(_controller.text.isEmpty){
+                      ScaffoldMessenger.of(context).showSnackBar(
+                         const SnackBar(content: Text('Le task ne doit pas être null'))
+                              );
+                              return;  // ✅ Correct
+                                }
+  // ...
+                        
+                      await _todos.add({
+                        'task':_controller.text,
+                        'done':false
+                      });
+                      _controller.clear();
+                    },
+                     icon: Icon(Icons.add))
+                ),
+              ),),
             Expanded(
               child:StreamBuilder<QuerySnapshot>(
                stream: _todos.snapshots(),
@@ -68,12 +96,23 @@ class _MyHomePageState extends State<MyHomePage> {
                   children: snapshot.data!.docs.map((doc)
                   {
                     return ListTile(
-                      title: Text(doc['task']),
+                      onLongPress: () async{
+                        await _todos.doc(doc.reference.id).delete();
+                      },
+                      onTap: () async{
+                        await _todos.doc(doc.reference.id).update(
+                          {'task':_controller.text}
+                        );
+                        _controller.clear();
+                      },
+                      title: Text(doc['task'],style: TextStyle(
+                        decoration: doc['done'] ? TextDecoration.lineThrough : null
+                      ),),
                       leading: Checkbox(
                         value: doc['done'],
                        onChanged: (value){
                         _todos.doc(doc.reference.id).update(
-                          {'done':value}
+                          {'done':value},
                         );
                        }),
                     );
