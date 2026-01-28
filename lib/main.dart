@@ -69,6 +69,13 @@ class _MyHomePageState extends State<MyHomePage> {
                   {
                     return ListTile(
                       title: Text(doc['task']),
+                      leading: Checkbox(
+                        value: doc['done'],
+                       onChanged: (value){
+                        _todos.doc(doc.reference.id).update(
+                          {'done':value}
+                        );
+                       }),
                     );
                   }).toList()
                 );
